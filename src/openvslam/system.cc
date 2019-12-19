@@ -123,6 +123,9 @@ void system::startup(const bool need_initialize) {
 
     mapping_thread_ = std::unique_ptr<std::thread>(new std::thread(&openvslam::mapping_module::run, mapper_));
     global_optimization_thread_ = std::unique_ptr<std::thread>(new std::thread(&openvslam::global_optimization_module::run, global_optimizer_));
+
+    std::cout << "\e[?25l";
+    std::cout << "\033[H\033[J";
 }
 
 void system::shutdown() {
@@ -142,6 +145,9 @@ void system::shutdown() {
 
     spdlog::info("shutdown SLAM system");
     system_is_running_ = false;
+
+    std::cout <<"\e[?25h";
+    std::cout <<"\e[10B";
 }
 
 void system::save_frame_trajectory(const std::string& path, const std::string& format) const {
@@ -243,6 +249,37 @@ Mat44_t system::feed_monocular_frame(const cv::Mat& img, const double timestamp,
     if (tracker_->tracking_state_ == tracker_state_t::Tracking) {
         map_publisher_->set_current_cam_pose(cam_pose_cw);
     }
+
+    Mat33_t rot_cw;
+    Vec3_t trans_cw;
+    Mat33_t rot_wc;
+    Vec3_t cam_center; 
+
+    rot_cw = cam_pose_cw.block<3, 3>(0, 0);
+    rot_wc = rot_cw.transpose();
+    trans_cw = cam_pose_cw.block<3, 1>(0, 3);
+    cam_center = -rot_wc * trans_cw;
+
+    float x_rad;
+    float y_rad;
+    float z_rad; 
+    
+    x_rad=asin(rot_cw(2,1));
+    y_rad=atan2(rot_cw(2,0),rot_cw(2,2));
+    z_rad=atan2(rot_cw(0,1),rot_cw(1,1));  
+
+    std::cout << "\033[H\033[J"; 
+    std::cout << "\nRolling" << std::endl;
+    std::cout << "Pitch : " << std::setw(10) << std::setfill('0')<< std::left << std::showpos << x_rad*180/3.1415 << std::endl;
+    std::cout << "Yaw   : " << std::setw(10) << std::setfill('0')<< std::left << std::showpos << y_rad*180/3.1415 << std::endl;
+    std::cout << "Roll  : " << std::setw(10) << std::setfill('0')<< std::left << std::showpos << z_rad*180/3.1415 << std::endl;
+
+    std::cout << "\nPosition" << std::endl;
+    std::cout << "X_pos : " << std::setw(10) << std::setfill('0')<< std::left << std::showpos << cam_center(0) << std::endl;
+    std::cout << "Y_pos : " << std::setw(10) << std::setfill('0')<< std::left << std::showpos << cam_center(1) << std::endl;
+    std::cout << "Z_pos : " << std::setw(10) << std::setfill('0')<< std::left << std::showpos << cam_center(2) << std::endl;
+
+    std::cout<<"\e[10A";
 
     return cam_pose_cw;
 }
