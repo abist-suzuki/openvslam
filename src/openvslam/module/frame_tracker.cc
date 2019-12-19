@@ -31,7 +31,8 @@ bool frame_tracker::motion_based_track(data::frame& curr_frm, const data::frame&
     if (num_matches < num_matches_thr_) {
         // marginを広げて再探索
         std::fill(curr_frm.landmarks_.begin(), curr_frm.landmarks_.end(), nullptr);
-        num_matches = projection_matcher.match_current_and_last_frames(curr_frm, last_frm, 2 * margin);
+        // [kohei]実験用にmargin -> 100 に固定化
+        num_matches = projection_matcher.match_current_and_last_frames(curr_frm, last_frm, 2 * 100);
     }
 
     if (num_matches < num_matches_thr_) {
